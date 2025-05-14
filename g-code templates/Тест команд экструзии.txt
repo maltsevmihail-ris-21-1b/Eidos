@@ -1,0 +1,20 @@
+M104 S200
+M105
+M109 S200
+G28 ;Home
+G1 Z15.0 F60 ;Move the platform down 15mm
+;Prime the extruder
+G92 E0
+G1 F200 E3
+G92 E0
+
+M107
+M104 S0
+;Retract the filament
+G92 E1
+G1 E-1 F60
+G28 X0 Y0
+
+M82 ;absolute extrusion mode
+M104 S0
+;End of Gcode
