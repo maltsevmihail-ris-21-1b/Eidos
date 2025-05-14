@@ -244,5 +244,3 @@
 
 1. https://shopstanki.ru/blog/podrobnoe-opisanie-g-i-m-kodov-dlya-programmirovaniya-chpu-cnc-stankov/ - Описание G и M кодов для программирования фрезерных и токарных CNC станков с ЧПУ
 2. OOO «Эйдос-Робототехника» «Руководство пользователя RCS Core, RCS HMI Версия 3.3», 2024. — 368 с.
-
-ТЗ - https://docs.google.com/document/d/1f9HFi-TaKEK5u0pV3kAbVhkw9WznWvibDZIENSlj9b4/edit?usp=drivesdk 
