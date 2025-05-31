@@ -6,7 +6,8 @@ import os
 class GCodeSender:
     def __init__(self, port, baudrate=115200):
         self.ser = serial.Serial(port, baudrate, timeout=1)
-        time.sleep(2)
+        time.sleep(3)
+        self.send_line("M105")
 
     def send_line(self, line):
         """Отправляет одну строку G-кода и ожидает ответа 'ok'"""
@@ -14,7 +15,7 @@ class GCodeSender:
         if not clean_line or clean_line.startswith(';'):
             return
 
-        print(f"Отправка: {clean_line}")
+        print(f"Отправка екструдеру: {clean_line}")
         self.ser.write(f"{clean_line}\n".encode())
 
 
@@ -24,8 +25,29 @@ class GCodeSender:
                 print(f"Ответ: {response}")
                 if 'ok' in response.lower():
                     break
-                if 'error' in response.lower():
-                    raise Exception(f"Ошибка выполнения: {response}")
+
+    def process_gcode_line(self, line):
+        """Разделяет G-код на движения и экструзию."""
+        if line.startswith("G0") or line.startswith("G1"):
+            # Разделяем команду на части
+            parts = line.split()
+
+
+            robot_cmd = " ".join([p for p in parts if p.startswith(("X", "Y", "Z", "G", "F"))])
+
+            extruder_cmd = " ".join([p for p in parts if p.startswith(("E", "F"))])
+
+            if robot_cmd:
+                print(f"Отправка роботу: {robot_cmd}")
+                #gcode_line(robot_cmd)
+
+            if extruder_cmd:
+                self.send_line("G1 " + extruder_cmd)
+        else:
+            if "M104" in line or "M109" in line or "M105" in line:
+                self.send_line(line)
+            elif "M82" in line or "M83" in line:
+                self.send_line(line)
 
     def send_file(self, filename):
         """Отправляет G-код из файла построчно"""
@@ -34,7 +56,7 @@ class GCodeSender:
 
         with open(filename, 'r') as f:
             for line in f:
-                self.send_line(line)
+                self.process_gcode_line(line)
 
     def close(self):
         self.ser.close()
