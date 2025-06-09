@@ -61,7 +61,7 @@ class GCodeSender:
             if extruder_cmd:
                 self.send_line("G92 " + extruder_cmd)
         else:
-            if "M104" in line or "M109" in line or "M105" in line:
+            if "M104" in line or "M109" in line or "M105" in line or "M107" in line or "M106" in line:
                 self.send_line(line)
             elif "M82" in line or "M83" in line:
                 self.send_line(line)
