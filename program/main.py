@@ -32,7 +32,6 @@ class GCodeSender:
             # Разделяем команду на части
             parts = line.split()
 
-
             robot_cmd = " ".join([p for p in parts if p.startswith(("X", "Y", "Z", "G", "F"))])
 
             extruder_cmd = " ".join([p for p in parts if p.startswith(("E", "F"))])
@@ -44,10 +43,23 @@ class GCodeSender:
             if extruder_cmd:
                 self.send_line("G1 " + extruder_cmd)
         elif "G28" in line:
-            #Смена инструмента. Выполняет сценарий автоматической смены
+            #M6 - Смена инструмента под номером. Выполняет сценарий автоматической смены
             #инструмента в соответствии с конфигурацией (с калибровкой) и уходит в
             #домашнюю позицию(она настроена в конфигурации интерпретатора).
             #gcode_line("T2 M6")
+        elif line.startswith("G92"):
+            parts = line.split()
+
+            robot_cmd = " ".join([p for p in parts if p.startswith(("X", "Y", "Z"))])
+
+            extruder_cmd = " ".join([p for p in parts if p.startswith(("E"))])
+
+            if robot_cmd:
+                print(f"Отправка роботу: {robot_cmd}")
+                #gcode_line(robot_cmd)
+
+            if extruder_cmd:
+                self.send_line("G92 " + extruder_cmd)
         else:
             if "M104" in line or "M109" in line or "M105" in line:
                 self.send_line(line)
