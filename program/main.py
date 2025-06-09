@@ -43,11 +43,17 @@ class GCodeSender:
 
             if extruder_cmd:
                 self.send_line("G1 " + extruder_cmd)
+        elif "G28" in line:
+            #Смена инструмента. Выполняет сценарий автоматической смены
+            #инструмента в соответствии с конфигурацией (с калибровкой) и уходит в
+            #домашнюю позицию(она настроена в конфигурации интерпретатора).
+            #gcode_line("T2 M6")
         else:
             if "M104" in line or "M109" in line or "M105" in line:
                 self.send_line(line)
             elif "M82" in line or "M83" in line:
                 self.send_line(line)
+        
 
     def send_file(self, filename):
         """Отправляет G-код из файла построчно"""
