@@ -5,6 +5,7 @@ import os
 
 class GCodeSender:
     float currentFRate = None
+    bool absoluteMode = True
 
     def __init__(self, port, baudrate=115200):
         self.ser = serial.Serial(port, baudrate, timeout=1)
@@ -61,9 +62,16 @@ class GCodeSender:
 
             if x is not None or y is not None or z is not None:
                 #print(f"Отправка роботу: {robot_cmd}")
-                #параметры     точка   система ккорд скорость в mm/sec  ускорение  сглаживание инструмент
-                line_with_base(point, "printerbed2", currentFRate * 60, 0.0,       0.0,        "extruder")
-
+                if absoluteMode:
+                    #параметры     точка   система ккорд  скорость в mm/sec   ускорение  сглаживание инструмент
+                    line_with_base(point, "printerbed2",  currentFRate * 60,  0.0,       0.0,        "extruder")
+                else:
+                    rot = matrix4()
+                    rot.x = 0 
+                    rot.y = 0
+                    rot.z = 0
+                    #параметры  точка  ориентация система ккорд  скорость в mm/sec   ускорение  Движение в системе инструмента  сглаживание инструмент
+                    line_rel(   point, rot,      "printerbed2",  currentFRate * 60,  0.0,       False,                          0.0,        "extruder")
         elif line == "G28":
             #переход в домашнюю позицию(начало координат)
             point = matrix4()
@@ -71,8 +79,8 @@ class GCodeSender:
             point.y = 0
             point.z = 0
             
-            #параметры     точка   система ккорд скорость в mm/sec  ускорение  сглаживание инструмент
-            line_with_base(point, "printerbed2", currentFRate * 60, 0.0,       0.0,        "extruder")
+            #параметры     точка   система ккорд  скорость в mm/sec   ускорение  сглаживание инструмент
+            line_with_base(point, "printerbed2",  currentFRate * 60,  0.0,       0.0,        "extruder")
         elif line.startswith("G92"):
             #задание новой позиции
             #подразумевается использование только с параметром E
@@ -88,6 +96,12 @@ class GCodeSender:
                     time.sleep(float(part[1:]))
                 elif part.startswith('P'):
                     time.sleep(float(part[1:]) / 1000)
+        elif line.startswith("G90"):
+            absoluteMode = True
+            self.send_line(line)
+        elif line.startswith("G91"):
+            absoluteMode = False
+            self.send_line(line)
         else:
             if "M104" in line or "M109" in line or "M105" in line or "M107" in line or "M106" in line:
                 self.send_line(line)
