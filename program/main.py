@@ -97,16 +97,15 @@ class GCodeSender:
                 elif part.startswith('P'):
                     time.sleep(float(part[1:]) / 1000)
         elif line.startswith("G90"):
+            #абсолютный режим
             absoluteMode = True
             self.send_line(line)
         elif line.startswith("G91"):
+            #относительный режим
             absoluteMode = False
             self.send_line(line)
-        else:
-            if "M104" in line or "M109" in line or "M105" in line or "M107" in line or "M106" in line:
-                self.send_line(line)
-            elif "M82" in line or "M83" in line:
-                self.send_line(line)
+        elif "M104" in line or "M109" in line or "M105" in line or "M107" in line or "M106" in line or "M83" in line or "M82" in line:
+            self.send_line(line)
     
     def send_file(self, filename):
         if not os.path.exists(filename):
