@@ -26,10 +26,10 @@ class GCodeSender:
                 if 'ok' in response.lower():
                     break
 
-    def parse_gcode(gcode):
+    def parse_gcode(line):
         x = y = z = f = e = None
         
-        parts = gcode.split()
+        parts = line.split()
         
         for part in parts:
             if part.startswith('X'):
@@ -60,7 +60,7 @@ class GCodeSender:
                 self.send_line("G1 E" + str(e) + " F" + str(currentFRate))
 
             if x is not None or y is not None or z is not None:
-                print(f"Отправка роботу: {robot_cmd}")
+                #print(f"Отправка роботу: {robot_cmd}")
                 #параметры     точка   система ккорд скорость в mm/sec  ускорение  сглаживание инструмент
                 line_with_base(point, "printerbed2", currentFRate * 60, 0.0,       0.0,        "extruder")
 
@@ -79,7 +79,15 @@ class GCodeSender:
             x, y, z, e = parse_gcode(line)
             
             if e is not None:
-            self.send_line("G92 E" + str(e))
+                self.send_line("G92 E" + str(e))
+        elif line.startswith("G4"):
+            #пауза в sec или ms
+            parts = line.split()
+            for part in parts:
+                if part.startswith('S'):
+                    time.sleep(float(part[1:]))
+                elif part.startswith('P'):
+                    time.sleep(float(part[1:]) / 1000)
         else:
             if "M104" in line or "M109" in line or "M105" in line or "M107" in line or "M106" in line:
                 self.send_line(line)
