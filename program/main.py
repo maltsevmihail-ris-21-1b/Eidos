@@ -4,6 +4,8 @@ import os
 
 
 class GCodeSender:
+    float currentFRate = None
+
     def __init__(self, port, baudrate=115200):
         self.ser = serial.Serial(port, baudrate, timeout=1)
         time.sleep(3)
@@ -26,27 +28,54 @@ class GCodeSender:
                 if 'ok' in response.lower():
                     break
 
+    def parse_gcode(gcode):
+    x = y = z = f = e = None
+    
+    parts = gcode.split()
+    
+    for part in parts:
+        if part.startswith('X'):
+            x = float(part[1:])
+        elif part.startswith('Y'):
+            y = float(part[1:])
+        elif part.startswith('Z'):
+            z = float(part[1:])
+        elif part.startswith('F'):
+            f = float(part[1:])
+        elif part.startswith('E'):
+            e = float(part[1:])
+    return x, y, z, f, e
+
     def process_gcode_line(self, line):
         """Разделяет G-код на движения и экструзию."""
         if line.startswith("G0") or line.startswith("G1"):
-            # Разделяем команду на части
-            parts = line.split()
+            x, y, z, f = parse_gcode(line)
+            point = matrix4()
+            if x is not None:
+                point.x = x
+            if y is not None:
+                point.y = y
+            if z is not None:
+                point.z = z
+            if f is not None:
+                self.currentFRate = f
+            if e is not None:
+                self.send_line("G1 " + str(e) + str(currentFRate))
 
-            robot_cmd = " ".join([p for p in parts if p.startswith(("X", "Y", "Z", "G", "F"))])
-
-            extruder_cmd = " ".join([p for p in parts if p.startswith(("E", "F"))])
-
-            if robot_cmd:
+            if x is not None or y is not None or z is not None:
                 print(f"Отправка роботу: {robot_cmd}")
-                #gcode_line(robot_cmd)
+                #параметры     точка   система ккорд скорость в mm/sec  ускорение  сглаживание инструмент
+                line_with_base(point, "printerbed2", currentFRate * 60, 0.0,       0.0,        "extruder")
 
-            if extruder_cmd:
-                self.send_line("G1 " + extruder_cmd)
         elif line == "G28":
-            #M6 - Смена инструмента под номером. Выполняет сценарий автоматической смены
-            #инструмента в соответствии с конфигурацией (с калибровкой) и уходит в
-            #домашнюю позицию(она настроена в конфигурации интерпретатора).
-            #gcode_line("T2 M6")
+            #переход в домашнюю позицию(начало координат)
+            point = matrix4()
+            point.x = 0
+            point.y = 0
+            point.z = 0
+            
+            #параметры     точка   система ккорд скорость в mm/sec  ускорение  сглаживание инструмент
+            line_with_base(point, "printerbed2", currentFRate * 60, 0.0,       0.0,        "extruder")
         elif line.startswith("G92"):
             parts = line.split()
 
@@ -59,13 +88,21 @@ class GCodeSender:
                 #gcode_line(robot_cmd)
 
             if extruder_cmd:
-                self.send_line("G92 " + extruder_cmd)
+                
+                self.sync_send(robot_cmd, "G92 " + extruder_cmd)
         else:
             if "M104" in line or "M109" in line or "M105" in line or "M107" in line or "M106" in line:
                 self.send_line(line)
             elif "M82" in line or "M83" in line:
                 self.send_line(line)
-        
+    
+    def sync_send(self, robot_cmd, extruder_cmd)
+        if robot_cmd:
+                print(f"Отправка роботу: {robot_cmd}")
+                #gcode_line(robot_cmd)
+
+        if extruder_cmd:
+            self.send_line("G92 " + extruder_cmd)
 
     def send_file(self, filename):
         """Отправляет G-код из файла построчно"""
