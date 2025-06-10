@@ -12,7 +12,6 @@ class GCodeSender:
         self.send_line("M105")
 
     def send_line(self, line):
-        """Отправляет одну строку G-кода и ожидает ответа 'ok'"""
         clean_line = line.strip()
         if not clean_line or clean_line.startswith(';'):
             return
@@ -47,9 +46,8 @@ class GCodeSender:
     return x, y, z, f, e
 
     def process_gcode_line(self, line):
-        """Разделяет G-код на движения и экструзию."""
         if line.startswith("G0") or line.startswith("G1"):
-            x, y, z, f = parse_gcode(line)
+            x, y, z, f, e = parse_gcode(line)
             point = matrix4()
             if x is not None:
                 point.x = x
@@ -60,7 +58,7 @@ class GCodeSender:
             if f is not None:
                 self.currentFRate = f
             if e is not None:
-                self.send_line("G1 " + str(e) + str(currentFRate))
+                self.send_line("G1 E" + str(e) + " F" + str(currentFRate))
 
             if x is not None or y is not None or z is not None:
                 print(f"Отправка роботу: {robot_cmd}")
@@ -77,11 +75,11 @@ class GCodeSender:
             #параметры     точка   система ккорд скорость в mm/sec  ускорение  сглаживание инструмент
             line_with_base(point, "printerbed2", currentFRate * 60, 0.0,       0.0,        "extruder")
         elif line.startswith("G92"):
-            parts = line.split()
+            #подразумевается использование только с параметром E
+            x, y, z, e = parse_gcode(line)
 
-            robot_cmd = " ".join([p for p in parts if p.startswith(("X", "Y", "Z"))])
-
-            extruder_cmd = " ".join([p for p in parts if p.startswith(("E"))])
+             if e is not None:
+                self.send_line("G92 E" + str(e))
 
             if robot_cmd:
                 print(f"Отправка роботу: {robot_cmd}")
