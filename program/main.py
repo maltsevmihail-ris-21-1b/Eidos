@@ -1,6 +1,7 @@
 import serial
 import time
 import os
+import re
 
 
 class GCodeSender:
@@ -28,21 +29,23 @@ class GCodeSender:
                     break
 
     def parse_gcode(line):
+        pattern = r'([XYZFE])([+-]?\d*\.?\d+)'
+        matches = re.findall(pattern, line)
+        
         x = y = z = f = e = None
         
-        parts = line.split()
-        
-        for part in parts:
-            if part.startswith('X'):
-                x = float(part[1:])
-            elif part.startswith('Y'):
-                y = float(part[1:])
-            elif part.startswith('Z'):
-                z = float(part[1:])
-            elif part.startswith('F'):
-                f = float(part[1:])
-            elif part.startswith('E'):
-                e = float(part[1:])
+        for letter, value in matches:
+            num = float(value)
+            if letter == 'X':
+                x = num
+            elif letter == 'Y':
+                y = num
+            elif letter == 'Z':
+                z = num
+            elif letter == 'F':
+                f = num
+            elif letter == 'E':
+                e = num
         return x, y, z, f, e
 
     def process_gcode_line(self, line):
@@ -71,7 +74,7 @@ class GCodeSender:
                     rot.y = 0
                     rot.z = 0
                     #параметры  точка  ориентация система ккорд  скорость в mm/sec   ускорение  Движение в системе инструмента  сглаживание инструмент
-                    line_rel(   point, rot,      "printerbed2",  currentFRate * 60,  0.0,       False,                          0.0,        "extruder")
+                    lin_rel(    point, rot,      "printerbed2",  currentFRate * 60,  0.0,       False,                          0.0,        "extruder")
         elif line == "G28":
             #переход в домашнюю позицию(начало координат)
             point = matrix4()
