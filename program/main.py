@@ -5,8 +5,11 @@ import re
 
 
 class GCodeSender:
-    float currentFRate = None
+    float currentFRate = 0
     bool absoluteMode = True
+    float posX = 0
+    float posY = 0
+    float posZ = 0
 
     def __init__(self, port, baudrate=115200):
         self.ser = serial.Serial(port, baudrate, timeout=1)
@@ -54,10 +57,22 @@ class GCodeSender:
             point = matrix4()
             if x is not None:
                 point.x = x
+                posX = x
+            else:
+                point.x = posX
+
             if y is not None:
                 point.y = y
+                posY = y
+            else:
+                point.y = posY
+
             if z is not None:
                 point.z = z
+                posZ = z
+            else:
+                point.z = posZ
+
             if f is not None:
                 self.currentFRate = f
             if e is not None:
